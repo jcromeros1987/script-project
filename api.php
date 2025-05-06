@@ -80,13 +80,13 @@ $data = json_decode($response, true);
 if (isset($data['data']['transcript'])) {
     $transcript = $data['data']['transcript'];
     
-    // Build a single string with each sentence on a new line, formatted as (index) [MM:SS] Speaker: Text.
+    // Build a single string with each sentence formatted as (index) [MM:SS] Speaker: Text, all in one line separated by a space.
     $lines = [];
     foreach ($transcript['sentences'] as $index => $sentence) {
         $time = formatTimestamp($sentence['start_time']);
         $lines[] = sprintf("(%d) [%s] %s: %s", $index + 1, $time, $sentence['speaker_name'], trim($sentence['raw_text']));
     }
-    $joinedText = implode("\n", $lines);
+    $joinedText = implode(" ", $lines);
     
     // Build the response object
     $result = [
