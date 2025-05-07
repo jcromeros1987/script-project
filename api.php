@@ -80,13 +80,24 @@ $data = json_decode($response, true);
 if (isset($data['data']['transcript'])) {
     $transcript = $data['data']['transcript'];
     
-    // Build a single string with each sentence formatted as (index) [MM:SS] Speaker: Text, all in one line separated by a space.
-    $lines = [];
-    foreach ($transcript['sentences'] as $index => $sentence) {
-        $time = formatTimestamp($sentence['start_time']);
-        $lines[] = sprintf("(%d) [%s] %s: %s", $index + 1, $time, $sentence['speaker_name'], trim($sentence['raw_text']));
+    // Improved grouping: iterate with index, compare current and next speaker
+    $sentences = $transcript['sentences'];
+    $n = count($sentences);
+    $i = 0;
+    $conversation = [];
+    while ($i < $n) {
+        $currentSpeaker = trim($sentences[$i]['speaker_name']);
+        $firstTime = formatTimestamp($sentences[$i]['start_time']);
+        $groupedText = trim($sentences[$i]['raw_text']);
+        $j = $i + 1;
+        while ($j < $n && trim($sentences[$j]['speaker_name']) === $currentSpeaker) {
+            $groupedText .= " " . trim($sentences[$j]['raw_text']);
+            $j++;
+        }
+        $conversation[] = "[$firstTime] $currentSpeaker: $groupedText";
+        $i = $j;
     }
-    $joinedText = implode(" ", $lines);
+    $allConversation = implode(' ', $conversation);
     
     // Build the response object
     $result = [
@@ -94,7 +105,7 @@ if (isset($data['data']['transcript'])) {
         'title' => $transcript['title'],
         'duration' => formatDuration($transcript['duration']),
         'date' => $transcript['date'],
-        'data' => $joinedText
+        'data' => $allConversation
     ];
     
     echo json_encode($result, JSON_PRETTY_PRINT);
